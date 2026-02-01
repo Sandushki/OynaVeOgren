@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Oyna ve Öğren Hakkında</h1>
+    <p>Bu site, çocukların eğlenerek öğrenebileceği çeşitli oyunlar sunar.</p>
+    <nav>
+        <ul>
+            <li><h2><a href="{{ url_for('index') }}">Ana Sayfa</a></h2></li>
+            <li><h2><a href="{{ url_for('games') }}">Oyunlar</a></h2></li>
+            <li><h2><a href="{{ url_for('contact') }}">İletişim</a></h2></li>
+        </ul>
+    </nav>
+</body>
+</html>

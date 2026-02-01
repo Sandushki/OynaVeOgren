@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oyunlar</title>
+</head>
+<body>
+    <h1>Oyunlar</h1>
+    <p>Burada çocuklar için eğlenceli ve öğretici oyunlar bulabilirsiniz.</p>
+
+    <ul>
+        <li>Matematik Oyunu - Yakında!</li>
+        <li><a href="{{ url_for('match') }}">İngilizce Kelime Oyunu</a></li>
+        <li>Kelime Bulmaca - Yakında!</li>
+        <li><a href="{{ url_for('memory') }}">Hafıza Kartları</a></li>
+    </ul>
+
+
+    <li><a href="{{ url_for('index') }}">Ana Sayfa</a></li>
+    <li><a href="{{ url_for('about') }}">Hakkında</a></li>
+    <li><a href="{{ url_for('contact') }}">İletişim</a></li>
+</body>
+</html>

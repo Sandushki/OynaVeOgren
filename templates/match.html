@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/match.css') }}">
+  <title>{{ title or "Word Matching Game" }}</title>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>{{ title or "Word Matching Game" }}</h1>
+      <div class="meta">
+        <div class="pill">Score: <strong id="score">0</strong>/<span id="total">0</span></div>
+        <div class="pill">Attempts: <strong id="attempts">0</strong></div>
+      </div>
+    </header>
+
+    <div class="board">
+      <section class="col" aria-label="Left column">
+        <h2>{{ left_label or "Column A" }}</h2>
+        <div class="list" id="leftList"></div>
+      </section>
+
+      <section class="col" aria-label="Right column">
+        <h2>{{ right_label or "Column B" }}</h2>
+        <div class="list" id="rightList"></div>
+      </section>
+    </div>
+
+<div class="controls">
+  <a href="{{ url_for('index') }}" class="back-link">
+    ← Ana sayfaya dön
+  </a>
+
+  <button type="button" id="resetBtn">Sıfırla</button>
+
+  <form method="post" action="{{ submit_url or url_for('submit_match') }}">
+    <input type="hidden" name="results_json" id="resultsJson" value="{}" />
+    <button class="primary" type="submit" id="submitBtn" disabled>
+      Sonuçları Gönder
+    </button>
+  </form>
+</div>
+
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <script>
+  const PAIRS = {{ pairs|tojson }};
+  const total = PAIRS.length;
+
+  const state = {
+    selectedLeft: null,
+    selectedRight: null,
+    matchedIds: new Set(),
+    attempts: 0,
+    score: 0,
+    matches: {}
+  };
+
+  const els = {
+    leftList: document.getElementById("leftList"),
+    rightList: document.getElementById("rightList"),
+    msg: document.getElementById("msg"),
+    score: document.getElementById("score"),
+    total: document.getElementById("total"),
+    attempts: document.getElementById("attempts"),
+    resetBtn: document.getElementById("resetBtn"),
+    submitBtn: document.getElementById("submitBtn"),
+    resultsJson: document.getElementById("resultsJson")
+  };
+
+  els.total.textContent = String(total);
+
+  // Fisher–Yates shuffle (tarafsız karıştırma)
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function mesaj(text) {
+    els.msg.textContent = text || "";
+  }
+
+  function updateHUD() {
+    els.score.textContent = String(state.score);
+    els.attempts.textContent = String(state.attempts);
+    els.resultsJson.value = JSON.stringify({
+      attempts: state.attempts,
+      score: state.score,
+      total: total,
+      matches: state.matches
+    });
+    els.submitBtn.disabled = state.score !== total;
+  }
+
+  function clearSelections() {
+    document.querySelectorAll(".item.selected").forEach(el => el.classList.remove("selected"));
+    state.selectedLeft = null;
+    state.selectedRight = null;
+  }
+
+  function flashWrong(aEl, bEl) {
+    [aEl, bEl].forEach(el => el && el.classList.add("wrongflash"));
+    setTimeout(() => [aEl, bEl].forEach(el => el && el.classList.remove("wrongflash")), 350);
+  }
+
+  function makeItem({ side, id, text }) {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.role = "button";
+    div.tabIndex = 0;
+    div.dataset.side = side;
+    div.dataset.id = String(id);
+
+    const label = document.createElement("div");
+    label.textContent = text;
+
+    const tag = document.createElement("div");
+    tag.className = "tag";
+    tag.textContent = "";
+
+    div.appendChild(label);
+    div.appendChild(tag);
+
+    function onPick() {
+      if (state.matchedIds.has(id)) return;
+
+      // Aynı öğeye tekrar tıklayınca seçim kaldır
+      if (div.classList.contains("selected")) {
+        div.classList.remove("selected");
+        if (side === "left") state.selectedLeft = null;
+        else state.selectedRight = null;
+        return;
+      }
+
+      // O sütunda önceden seçili olanı kaldır
+      document.querySelectorAll(`.item.selected[data-side="${side}"]`)
+        .forEach(el => el.classList.remove("selected"));
+
+      div.classList.add("selected");
+      if (side === "left") state.selectedLeft = { id, el: div };
+      else state.selectedRight = { id, el: div };
+
+      tryResolve();
+    }
+
+    div.addEventListener("click", onPick);
+    div.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(); }
+    });
+
+    return div;
+  }
+
+  function tryResolve() {
+    if (!state.selectedLeft || !state.selectedRight) return;
+
+    state.attempts += 1;
+
+    const leftId = state.selectedLeft.id;
+    const rightId = state.selectedRight.id;
+
+    const correct = (leftId === rightId);
+
+    if (correct) {
+      state.score += 1;
+      state.matchedIds.add(leftId);
+      state.matches[String(leftId)] = rightId;
+
+      [state.selectedLeft.el, state.selectedRight.el].forEach(el => {
+        el.classList.remove("selected");
+        el.classList.add("matched");
+        el.querySelector(".tag").textContent = "Eşleşti";
+      });
+
+      mesaj("✅ Doğru eşleşme!");
+    } else {
+      flashWrong(state.selectedLeft.el, state.selectedRight.el);
+      mesaj("❌ Yanlış. Tekrar deneyin.");
+    }
+
+    clearSelections();
+    updateHUD();
+  }
+
+  function render() {
+    els.leftList.innerHTML = "";
+    els.rightList.innerHTML = "";
+
+    // ✅ Sütunları bağımsız hazırlayıp bağımsız karıştır
+    const leftItems = shuffle(PAIRS.map(p => ({ side: "left", id: p.id, text: p.left })));
+    const rightItems = shuffle(PAIRS.map(p => ({ side: "right", id: p.id, text: p.right })));
+
+    leftItems.forEach(item => els.leftList.appendChild(makeItem(item)));
+    rightItems.forEach(item => els.rightList.appendChild(makeItem(item)));
+
+    mesaj("Her sütundan bir kelime seçin.");
+    updateHUD();
+  }
+
+  function resetGame() {
+    state.selectedLeft = null;
+    state.selectedRight = null;
+    state.matchedIds = new Set();
+    state.attempts = 0;
+    state.score = 0;
+    state.matches = {};
+    render();
+  }
+
+  els.resetBtn.addEventListener("click", resetGame);
+
+  render();
+</script>
+
+</body>
+</html>

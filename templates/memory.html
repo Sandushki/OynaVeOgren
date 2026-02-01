@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title or "Hafıza Oyunu (Kelime - Resim)" }}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/memory.css') }}" />
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>{{ title or "Hafıza Oyunu: Kelime ↔ Resim" }}</h1>
+      <div class="meta">
+        <div class="pill">Eşleşme: <strong id="matches">0</strong>/<span id="total">0</span></div>
+        <div class="pill">Hamle: <strong id="moves">0</strong></div>
+      </div>
+    </header>
+
+    <div class="controls">
+      <a href="{{ url_for('index') }}" class="back-link">← Ana sayfaya dön</a>
+      <button type="button" id="resetBtn">Yeniden başlat</button>
+
+      <form method="post" action="{{ submit_url or url_for('submit_memory') }}">
+        <input type="hidden" name="results_json" id="resultsJson" value="{}" />
+        <button class="primary" type="submit" id="submitBtn" disabled>Sonuçları gönder</button>
+      </form>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <div class="grid" id="grid" aria-label="Hafıza oyunu kartları"></div>
+  </div>
+
+  <script>
+    /**
+     * Flask'tan beklenen veri:
+     * pairs = [
+     *   {"id": 1, "word": "kuş",  "image_url": "/static/img/bird.png", "alt": "kuş"},
+     *   {"id": 2, "word": "kedi", "image_url": "/static/img/cat.png",  "alt": "kedi"},
+     * ]
+     */
+    const PAIRS = {{ pairs|tojson }};
+    const totalPairs = PAIRS.length;
+
+    const els = {
+      grid: document.getElementById("grid"),
+      msg: document.getElementById("msg"),
+      matches: document.getElementById("matches"),
+      total: document.getElementById("total"),
+      moves: document.getElementById("moves"),
+      resetBtn: document.getElementById("resetBtn"),
+      submitBtn: document.getElementById("submitBtn"),
+      resultsJson: document.getElementById("resultsJson")
+    };
+
+    els.total.textContent = String(totalPairs);
+
+    const state = {
+      deck: [],              // {uid, pairId, kind: "word"|"image", word, image_url, alt}
+      flipped: [],           // array of uids (max 2)
+      matchedUids: new Set(),
+      moves: 0,
+      matches: 0,
+      startedAt: Date.now(),
+      // for submission
+      matchedPairIds: []
+    };
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function mesaj(text) { els.msg.textContent = text || ""; }
+
+    function updateHUD() {
+      els.matches.textContent = String(state.matches);
+      els.moves.textContent = String(state.moves);
+
+      const elapsedMs = Date.now() - state.startedAt;
+
+      els.resultsJson.value = JSON.stringify({
+        moves: state.moves,
+        matches: state.matches,
+        total_pairs: totalPairs,
+        elapsed_ms: elapsedMs,
+        matched_pair_ids: state.matchedPairIds
+      });
+
+      els.submitBtn.disabled = state.matches !== totalPairs;
+    }
+
+    function buildDeck() {
+      let uid = 1;
+      const deck = [];
+
+      for (const p of PAIRS) {
+        deck.push({
+          uid: uid++,
+          pairId: p.id,
+          kind: "word",
+          word: p.word
+        });
+        deck.push({
+          uid: uid++,
+          pairId: p.id,
+          kind: "image",
+          image_url: p.image_url,
+          alt: p.alt || p.word
+        });
+      }
+
+      state.deck = shuffle(deck);
+    }
+
+    function cardHtml(c) {
+      // back side: generic; front side: word or image
+      const frontContent = (c.kind === "word")
+        ? `<div class="word">${escapeHtml(c.word)}</div>`
+        : `<div class="imgwrap"><img src="${escapeAttr(c.image_url)}" alt="${escapeAttr(c.alt || "")}" loading="lazy"></div>`;
+
+      const badge = (c.kind === "word") ? "KELİME" : "RESİM";
+
+      return `
+        <div class="card" data-uid="${c.uid}" data-pair="${c.pairId}" data-kind="${c.kind}" role="button" tabindex="0" aria-label="Kart">
+          <div class="badge">${badge}</div>
+          <div class="inner">
+            <div class="face back">
+              ?
+              <div class="hint">Çevir</div>
+            </div>
+            <div class="face front">
+              ${frontContent}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function render() {
+      els.grid.innerHTML = state.deck.map(cardHtml).join("");
+      mesaj("İki kart çevir: bir kelime ve bir resim.");
+      updateHUD();
+
+      // attach handlers
+      els.grid.querySelectorAll(".card").forEach(card => {
+        card.addEventListener("click", () => onFlip(card));
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onFlip(card); }
+        });
+      });
+    }
+
+    function onFlip(cardEl) {
+      const uid = Number(cardEl.dataset.uid);
+
+      if (state.matchedUids.has(uid)) return;
+      if (state.flipped.includes(uid)) return;
+      if (state.flipped.length >= 2) return;
+
+      // flip
+      cardEl.classList.add("flipped");
+      state.flipped.push(uid);
+
+      if (state.flipped.length === 2) {
+        state.moves += 1;
+        checkMatch();
+      }
+
+      updateHUD();
+    }
+
+    function checkMatch() {
+      const [u1, u2] = state.flipped;
+      const c1 = state.deck.find(c => c.uid === u1);
+      const c2 = state.deck.find(c => c.uid === u2);
+
+      const el1 = els.grid.querySelector(`.card[data-uid="${u1}"]`);
+      const el2 = els.grid.querySelector(`.card[data-uid="${u2}"]`);
+
+      // must be same pairId AND different kinds (word vs image)
+      const samePair = c1.pairId === c2.pairId;
+      const differentKind = c1.kind !== c2.kind;
+      const ok = samePair && differentKind;
+
+      if (ok) {
+        state.matches += 1;
+        state.matchedUids.add(u1);
+        state.matchedUids.add(u2);
+        state.matchedPairIds.push(c1.pairId);
+
+        [el1, el2].forEach(el => {
+          el.classList.add("matched", "disabled");
+        });
+
+        mesaj("✅ Eşleşti!");
+        state.flipped = [];
+        updateHUD();
+        return;
+      }
+
+      // mismatch → flip back after a brief delay
+      mesaj("❌ Eşleşmedi. Tekrar dene.");
+      [el1, el2].forEach(el => el.classList.add("shake"));
+
+      setTimeout(() => {
+        [el1, el2].forEach(el => {
+          el.classList.remove("flipped", "shake");
+        });
+        state.flipped = [];
+        updateHUD();
+      }, 650);
+    }
+
+    function resetGame() {
+      state.flipped = [];
+      state.matchedUids = new Set();
+      state.moves = 0;
+      state.matches = 0;
+      state.startedAt = Date.now();
+      state.matchedPairIds = [];
+      buildDeck();
+      render();
+    }
+
+    // basic escaping for safety
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+    function escapeAttr(s) { return escapeHtml(s); }
+
+    els.resetBtn.addEventListener("click", resetGame);
+
+    // init
+    buildDeck();
+    render();
+  </script>
+</body>
+</html>
