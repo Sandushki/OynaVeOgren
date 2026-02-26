@@ -50,13 +50,17 @@
   const PAIRS = {{ pairs|tojson }};
   const total = PAIRS.length;
 
+  // How many pairs visible at once (Duolingo style)
+  const VISIBLE = Math.min(6, total);
+
   const state = {
-    selectedLeft: null,
-    selectedRight: null,
-    matchedIds: new Set(),
+    selectedLeftEl: null,
+    selectedRightEl: null,
     attempts: 0,
     score: 0,
-    matches: {}
+    matches: {},
+    remainingIds: [],
+    finished: false,
   };
 
   const els = {
@@ -73,7 +77,6 @@
 
   els.total.textContent = String(total);
 
-  // Fisher–Yates shuffle (tarafsız karıştırma)
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -83,6 +86,11 @@
     return a;
   }
 
+  function byId(id) {
+    const n = Number(id);
+    return PAIRS.find(p => Number(p.id) === n);
+  }
+
   function mesaj(text) {
     els.msg.textContent = text || "";
   }
@@ -90,19 +98,22 @@
   function updateHUD() {
     els.score.textContent = String(state.score);
     els.attempts.textContent = String(state.attempts);
+
     els.resultsJson.value = JSON.stringify({
       attempts: state.attempts,
       score: state.score,
       total: total,
       matches: state.matches
     });
+
+    // Enable submit only when completed all pairs
     els.submitBtn.disabled = state.score !== total;
   }
 
   function clearSelections() {
     document.querySelectorAll(".item.selected").forEach(el => el.classList.remove("selected"));
-    state.selectedLeft = null;
-    state.selectedRight = null;
+    state.selectedLeftEl = null;
+    state.selectedRightEl = null;
   }
 
   function flashWrong(aEl, bEl) {
@@ -110,16 +121,17 @@
     setTimeout(() => [aEl, bEl].forEach(el => el && el.classList.remove("wrongflash")), 350);
   }
 
-  function makeItem({ side, id, text }) {
+  function makeItem(side) {
     const div = document.createElement("div");
     div.className = "item";
     div.role = "button";
     div.tabIndex = 0;
     div.dataset.side = side;
-    div.dataset.id = String(id);
+    div.dataset.id = ""; // filled later
 
     const label = document.createElement("div");
-    label.textContent = text;
+    label.className = "label";
+    label.textContent = "";
 
     const tag = document.createElement("div");
     tag.className = "tag";
@@ -129,23 +141,24 @@
     div.appendChild(tag);
 
     function onPick() {
-      if (state.matchedIds.has(id)) return;
+      if (state.finished) return;
+      if (div.classList.contains("done")) return;
 
-      // Aynı öğeye tekrar tıklayınca seçim kaldır
+      // toggle off
       if (div.classList.contains("selected")) {
         div.classList.remove("selected");
-        if (side === "left") state.selectedLeft = null;
-        else state.selectedRight = null;
+        if (side === "left") state.selectedLeftEl = null;
+        else state.selectedRightEl = null;
         return;
       }
 
-      // O sütunda önceden seçili olanı kaldır
+      // one selected per column
       document.querySelectorAll(`.item.selected[data-side="${side}"]`)
         .forEach(el => el.classList.remove("selected"));
 
       div.classList.add("selected");
-      if (side === "left") state.selectedLeft = { id, el: div };
-      else state.selectedRight = { id, el: div };
+      if (side === "left") state.selectedLeftEl = div;
+      else state.selectedRightEl = div;
 
       tryResolve();
     }
@@ -158,65 +171,133 @@
     return div;
   }
 
+  function setCard(div, id, text) {
+    div.dataset.id = String(Number(id));
+    div.querySelector(".label").textContent = text;
+    div.querySelector(".tag").textContent = "";
+    div.classList.remove("matched", "selected", "wrongflash", "done");
+  }
+
+  function disableCard(div, text) {
+    div.querySelector(".tag").textContent = text || "Bitti";
+    div.classList.add("done");
+    div.classList.remove("selected", "wrongflash");
+  }
+
+  function refill(leftEl, rightEl) {
+    if (state.remainingIds.length === 0) {
+      // No more new pairs to bring in — these slots become inactive
+      disableCard(leftEl, "Bitti");
+      disableCard(rightEl, "Bitti");
+      return;
+    }
+
+    const newId = Number(state.remainingIds.pop());
+    const pair = byId(newId);
+    setCard(leftEl, newId, pair.left);
+    setCard(rightEl, newId, pair.right);
+
+    // Optional: move right card to random position for extra "match madness" feel
+    const newPos = Math.floor(Math.random() * els.rightList.children.length);
+    els.rightList.removeChild(rightEl);
+    els.rightList.insertBefore(rightEl, els.rightList.children[newPos] || null);
+  }
+
+  function finishIfDone() {
+    if (state.score === total) {
+      state.finished = true;
+      mesaj("🎉 Tebrikler! Hepsini eşleştirdin!");
+      // Lock board
+      document.querySelectorAll(".item").forEach(el => el.classList.add("done"));
+    }
+  }
+
   function tryResolve() {
-    if (!state.selectedLeft || !state.selectedRight) return;
+    if (!state.selectedLeftEl || !state.selectedRightEl) return;
 
     state.attempts += 1;
 
-    const leftId = state.selectedLeft.id;
-    const rightId = state.selectedRight.id;
+    const leftId = Number(state.selectedLeftEl.dataset.id);
+    const rightId = Number(state.selectedRightEl.dataset.id);
 
-    const correct = (leftId === rightId);
-
-    if (correct) {
+    if (leftId === rightId) {
       state.score += 1;
-      state.matchedIds.add(leftId);
       state.matches[String(leftId)] = rightId;
 
-      [state.selectedLeft.el, state.selectedRight.el].forEach(el => {
+      const leftEl = state.selectedLeftEl;
+      const rightEl = state.selectedRightEl;
+
+      [leftEl, rightEl].forEach(el => {
         el.classList.remove("selected");
         el.classList.add("matched");
-        el.querySelector(".tag").textContent = "Eşleşti";
+        el.querySelector(".tag").textContent = "✔";
       });
 
       mesaj("✅ Doğru eşleşme!");
-    } else {
-      flashWrong(state.selectedLeft.el, state.selectedRight.el);
-      mesaj("❌ Yanlış. Tekrar deneyin.");
-    }
+      clearSelections();
+      updateHUD();
 
-    clearSelections();
-    updateHUD();
+      // Replace matched cards in-place
+      setTimeout(() => {
+        refill(leftEl, rightEl);
+        updateHUD();
+        finishIfDone();
+      }, 200);
+
+    } else {
+      flashWrong(state.selectedLeftEl, state.selectedRightEl);
+      mesaj("❌ Yanlış. Tekrar deneyin.");
+      clearSelections();
+      updateHUD();
+    }
   }
 
-  function render() {
+  function renderInitial() {
     els.leftList.innerHTML = "";
     els.rightList.innerHTML = "";
 
-    // ✅ Sütunları bağımsız hazırlayıp bağımsız karıştır
-    const leftItems = shuffle(PAIRS.map(p => ({ side: "left", id: p.id, text: p.left })));
-    const rightItems = shuffle(PAIRS.map(p => ({ side: "right", id: p.id, text: p.right })));
+    const ids = shuffle(PAIRS.map(p => Number(p.id)));
+    const inPlay = ids.slice(0, VISIBLE);
+    state.remainingIds = ids.slice(VISIBLE);
 
-    leftItems.forEach(item => els.leftList.appendChild(makeItem(item)));
-    rightItems.forEach(item => els.rightList.appendChild(makeItem(item)));
+    // Build fixed slots (so refill happens "in place")
+    const leftSlots = [];
+    const rightSlots = [];
+
+    inPlay.forEach(id => {
+      const p = byId(id);
+      const el = makeItem("left");
+      setCard(el, id, p.left);
+      leftSlots.push(el);
+      els.leftList.appendChild(el);
+    });
+
+    shuffle(inPlay).forEach(id => {
+      const p = byId(id);
+      const el = makeItem("right");
+      setCard(el, id, p.right);
+      rightSlots.push(el);
+      els.rightList.appendChild(el);
+    });
 
     mesaj("Her sütundan bir kelime seçin.");
     updateHUD();
   }
 
   function resetGame() {
-    state.selectedLeft = null;
-    state.selectedRight = null;
-    state.matchedIds = new Set();
+    state.selectedLeftEl = null;
+    state.selectedRightEl = null;
     state.attempts = 0;
     state.score = 0;
     state.matches = {};
-    render();
+    state.remainingIds = [];
+    state.finished = false;
+    renderInitial();
   }
 
   els.resetBtn.addEventListener("click", resetGame);
 
-  render();
+  resetGame();
 </script>
 
 </body>

@@ -1,7 +1,10 @@
 from flask import Flask, jsonify, request, render_template, session, url_for, redirect
+
 import json
 import random
 import os
+
+from game_logic import *
 
 app = Flask(__name__)
 
@@ -33,38 +36,6 @@ def contact():
 # ---------------------------
 # Addition + Subtraction Game
 # ---------------------------
-
-MAX_VALUE = 20
-NUM_OPTIONS = 4
-
-
-def generate_question():
-    op = random.choice(["+", "-"])
-
-    if op == "+":
-        a = random.randint(0, MAX_VALUE)
-        b = random.randint(0, MAX_VALUE - a)
-        correct = a + b
-        text = f"{a} + {b} = ?"
-    else:
-        a = random.randint(0, MAX_VALUE)
-        b = random.randint(0, a)
-        correct = a - b
-        text = f"{a} - {b} = ?"
-
-    options = {correct}
-    while len(options) < NUM_OPTIONS:
-        candidate = correct + random.choice([-3, -2, -1, 1, 2, 3, -4, 4])
-        if 0 <= candidate <= MAX_VALUE:
-            options.add(candidate)
-        else:
-            options.add(random.randint(0, MAX_VALUE))
-
-    options = list(options)
-    random.shuffle(options)
-
-    return {"text": text, "correct": correct, "options": options}
-
 
 @app.route("/addition", methods=["GET", "POST"])
 def addition():
@@ -111,23 +82,6 @@ def reset():
 # ---------------------------
 # Multiplication Game (2x table)
 # ---------------------------
-
-def make_choices(correct: int):
-    wrongs = set()
-
-    while len(wrongs) < 3:
-        delta = random.choice([-6, -4, -2, 2, 4, 6, 8, -8])
-        w = correct + delta
-
-        if w <= 0 or w == correct:
-            continue
-
-        wrongs.add(w)
-
-    choices = [correct] + list(wrongs)
-    random.shuffle(choices)
-    return choices
-
 
 @app.route("/multiply", methods=["GET", "POST"])
 def multiply():
@@ -191,12 +145,9 @@ def multiply():
 
 @app.get("/match")
 def match():
-    pairs = [
-        {"id": 1, "left": "kedi", "right": "cat"},
-        {"id": 2, "left": "köpek", "right": "dog"},
-        {"id": 3, "left": "kuş", "right": "bird"},
-    ]
-    return render_template("match.html", pairs=pairs, title="İngilizce Kelime Eşleştirme Oyunu")
+    return render_template("match.html",
+                           pairs=pairs,
+                           title="İngilizce Kelime Eşleştirme Oyunu")
 
 
 @app.post("/submit-match")
@@ -213,25 +164,25 @@ def submit_match():
 def memory():
 
     pairs = [
-        {
-            "id": 1,
-            "word": "kuş",
-            "image_url": url_for("static", filename="img/bird.png"),
-            "alt": "kuş"
-        },
-        {
-            "id": 2,
-            "word": "kedi",
-            "image_url": url_for("static", filename="img/cat.png"),
-            "alt": "kedi"
-        },
-        {
-            "id": 3,
-            "word": "köpek",
-            "image_url": url_for("static", filename="img/dog.png"),
-            "alt": "köpek"
-        },
-    ]
+    {
+        "id": 1,
+        "word": "kuş",
+        "image_url": url_for("static", filename="img/bird.png"),
+        "alt": "kuş"
+    },
+    {
+        "id": 2,
+        "word": "kedi",
+        "image_url": url_for("static", filename="img/cat.png"),
+        "alt": "kedi"
+    },
+    {
+        "id": 3,
+        "word": "köpek",
+        "image_url": url_for("static", filename="img/dog.png"),
+        "alt": "köpek"
+    },
+]
 
     return render_template(
         "memory.html",

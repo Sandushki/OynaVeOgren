@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <title>Document</title>
 </head>
 <body>
@@ -10,9 +11,9 @@
     <p>Bu site, çocukların eğlenerek öğrenebileceği çeşitli oyunlar sunar.</p>
     <nav>
         <ul>
-            <li><h2><a href="{{ url_for('index') }}">Ana Sayfa</a></h2></li>
-            <li><h2><a href="{{ url_for('games') }}">Oyunlar</a></h2></li>
-            <li><h2><a href="{{ url_for('contact') }}">İletişim</a></h2></li>
+            <li class="bottom"><h2><a href="{{ url_for('index') }}">Ana Sayfa</a></h2></li>
+            <li class="bottom"><h2><a href="{{ url_for('games') }}">Oyunlar</a></h2></li>
+            <li class="bottom"><h2><a href="{{ url_for('contact') }}">İletişim</a></h2></li>
         </ul>
     </nav>
 </body>

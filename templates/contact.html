@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <title>İletişim</title>
 </head>
 <body>
@@ -15,8 +16,8 @@
     </ul>
 
 
-    <li><a href="{{ url_for('index') }}">Ana Sayfa</a></li>
-    <li><a href="{{ url_for('about') }}">Hakkında</a></li>
-    <li><a href="{{ url_for('games') }}">Oyunlar</a></li>
+    <li class="bottom"><a href="{{ url_for('index') }}">Ana Sayfa</a></li>
+    <li class="bottom"><a href="{{ url_for('about') }}">Hakkında</a></li>
+    <li class="bottom"><a href="{{ url_for('games') }}">Oyunlar</a></li>
 </body>
 </html>
