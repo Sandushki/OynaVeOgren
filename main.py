@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # 🔐 Required for session support
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-only-change-this")
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "top-secret-key")
 
 
 # ---------------------------
@@ -28,6 +28,84 @@ def games():
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
+
+
+# ---------------------------
+# Addition + Subtraction Game
+# ---------------------------
+
+MAX_VALUE = 20
+NUM_OPTIONS = 4
+
+
+def generate_question():
+    op = random.choice(["+", "-"])
+
+    if op == "+":
+        a = random.randint(0, MAX_VALUE)
+        b = random.randint(0, MAX_VALUE - a)
+        correct = a + b
+        text = f"{a} + {b} = ?"
+    else:
+        a = random.randint(0, MAX_VALUE)
+        b = random.randint(0, a)
+        correct = a - b
+        text = f"{a} - {b} = ?"
+
+    options = {correct}
+    while len(options) < NUM_OPTIONS:
+        candidate = correct + random.choice([-3, -2, -1, 1, 2, 3, -4, 4])
+        if 0 <= candidate <= MAX_VALUE:
+            options.add(candidate)
+        else:
+            options.add(random.randint(0, MAX_VALUE))
+
+    options = list(options)
+    random.shuffle(options)
+
+    return {"text": text, "correct": correct, "options": options}
+
+
+@app.route("/addition", methods=["GET", "POST"])
+def addition():
+    # First time entering page → initialize game
+    if "question" not in session:
+        session["score"] = 0
+        session["question_number"] = 0
+        session["last_feedback"] = None
+        session["question"] = generate_question()
+
+    if request.method == "POST":
+        chosen = request.form.get("answer")
+        correct = session["question"]["correct"]
+
+        if chosen is not None:
+            chosen = int(chosen)
+            session["question_number"] += 1
+
+            if chosen == correct:
+                session["score"] += 1
+                session["last_feedback"] = "✅ Doğru!"
+            else:
+                session["last_feedback"] = f"❌ Yanlış. Doğru cevap: {correct}"
+
+            session["question"] = generate_question()
+
+        return redirect(url_for("addition"))
+
+    return render_template(
+        "addition.html",
+        question=session["question"],
+        score=session["score"],
+        question_number=session["question_number"],
+        last_feedback=session["last_feedback"],
+    )
+
+
+@app.route("/reset", methods=["POST"])
+def reset():
+    session.clear()
+    return redirect(url_for("addition"))
 
 
 # ---------------------------

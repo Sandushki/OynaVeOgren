@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matematik Oyunu</title>
+  <link rel="stylesheet" href="../static/css/addition.css">
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <a href="{{ url_for('games') }}" class="home-btn">← Geri Dön</a>
+</div>
+
+<div class="wrap">
+  <h1>🧮 Toplama & Çıkarma</h1>
+
+  <div class="stats">
+    <div>Skor: <strong>{{ score }}</strong></div>
+    <div>Soru: <strong>{{ question_number }}</strong></div>
+  </div>
+
+  <div class="question">
+    <div class="qtext">{{ question.text }}</div>
+
+    {% if last_feedback %}
+      <div class="feedback">{{ last_feedback }}</div>
+    {% endif %}
+
+    <form method="post" class="options">
+      {% for opt in question.options %}
+        <button type="submit" name="answer" value="{{ opt }}" class="btn option">
+          {{ opt }}
+        </button>
+      {% endfor %}
+    </form>
+
+    <form action="{{ url_for('reset') }}" method="post">
+      <button type="submit" class="btn ghost">Sıfırla</button>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
