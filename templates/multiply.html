@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>2 ile Çarpma Oyunu</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/multiply.css') }}">
+</head>
+<body>
+  <div class="wrap">
+        <div class="card">
+    <div class="topbar">
+        <div class="pill">Soru: {{ progress }}/15</div>
+        <div class="pill">⭐ Puan: {{ score }}</div>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="home-button">
+        ⬅ Anasayfaya Dön
+    </a>
+
+  <h1 class="title">2 ile Çarpma Oyunu</h1>
+      <p class="subtitle">Doğru cevaba dokun!</p>
+
+      <div class="question" aria-live="polite">
+        <div class="qtext">{{ question.a }} × {{ question.b }} = ?</div>
+      </div>
+
+      <form method="POST">
+        <div class="grid">
+          {% for c in choices %}
+            <button class="choice" type="submit" name="answer" value="{{ c }}">
+              {{ c }}
+            </button>
+          {% endfor %}
+        </div>
+      </form>
+
+      {% if message %}
+        <div class="message {% if is_correct %}ok{% else %}bad{% endif %}">
+          {{ message }}
+        </div>
+      {% endif %}
+
+      <div class="footer">
+        <div class="progressbar">
+            <div style="width: {{ (progress / 15) * 100 }}%;"></div>
+        </div>
+        <div class="small">Hedef: 2×1’den 2×15’e</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
