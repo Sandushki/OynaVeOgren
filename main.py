@@ -5,6 +5,7 @@ import random
 import os
 
 from game_logic import *
+from vocabulary import matching_pairs, memory_pairs
 
 app = Flask(__name__)
 
@@ -146,7 +147,7 @@ def multiply():
 @app.get("/match")
 def match():
     return render_template("match.html",
-                           pairs=pairs,
+                           pairs=matching_pairs,
                            title="İngilizce Kelime Eşleştirme Oyunu")
 
 
@@ -163,31 +164,10 @@ def submit_match():
 @app.get("/memory")
 def memory():
 
-    pairs = [
-    {
-        "id": 1,
-        "word": "kuş",
-        "image_url": url_for("static", filename="img/bird.png"),
-        "alt": "kuş"
-    },
-    {
-        "id": 2,
-        "word": "kedi",
-        "image_url": url_for("static", filename="img/cat.png"),
-        "alt": "kedi"
-    },
-    {
-        "id": 3,
-        "word": "köpek",
-        "image_url": url_for("static", filename="img/dog.png"),
-        "alt": "köpek"
-    },
-]
-
     return render_template(
         "memory.html",
         title="Hafıza Kartları Oyunu",
-        pairs=pairs
+        pairs=memory_pairs
     )
 
 

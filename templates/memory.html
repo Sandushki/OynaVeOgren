@@ -19,7 +19,7 @@
     </header>
 
     <div class="controls">
-      <a href="{{ url_for('index') }}" class="back-link">← Ana sayfaya dön</a>
+      <a href="{{ url_for('games') }}" class="back-link">← Ana sayfaya dön</a>
       <button type="button" id="resetBtn">Yeniden başlat</button>
 
       <form method="post" action="{{ submit_url or url_for('submit_memory') }}">
@@ -42,7 +42,9 @@
      * ]
      */
     const PAIRS = {{ pairs|tojson }};
-    const totalPairs = PAIRS.length;
+    const STATIC_IMG_BASE = "{{ url_for('static', filename='img/') }}";
+    const totalPairs = PAIRS.length;     // 30 in your data
+    const ROUND_PAIRS = 6;               // show 6 matches at a time
 
     const els = {
       grid: document.getElementById("grid"),
@@ -55,7 +57,7 @@
       resultsJson: document.getElementById("resultsJson")
     };
 
-    els.total.textContent = String(totalPairs);
+    els.total.textContent = String(ROUND_PAIRS);
 
     const state = {
       deck: [],              // {uid, pairId, kind: "word"|"image", word, image_url, alt}
@@ -93,30 +95,44 @@
         matched_pair_ids: state.matchedPairIds
       });
 
-      els.submitBtn.disabled = state.matches !== totalPairs;
+      els.submitBtn.disabled = state.matches !== ROUND_PAIRS;
     }
 
     function buildDeck() {
-      let uid = 1;
-      const deck = [];
+        let uid = 1;
 
-      for (const p of PAIRS) {
-        deck.push({
-          uid: uid++,
-          pairId: p.id,
-          kind: "word",
-          word: p.word
-        });
-        deck.push({
-          uid: uid++,
-          pairId: p.id,
-          kind: "image",
-          image_url: p.image_url,
-          alt: p.alt || p.word
-        });
-      }
+          // Pick 6 random pairs out of the full set
+          const chosenPairs = shuffle(PAIRS).slice(0, Math.min(ROUND_PAIRS, PAIRS.length));
 
-      state.deck = shuffle(deck);
+          // Build two rows separately:
+          // Row 1 = words (6 cards)
+          // Row 2 = images (6 cards), shuffled so positions don't align
+          const wordCards = [];
+          const imageCards = [];
+
+        for (const p of chosenPairs) {
+          wordCards.push({
+            uid: uid++,
+            pairId: p.id,
+            kind: "word",
+            word: p.word
+          });
+
+          imageCards.push({
+            uid: uid++,
+            pairId: p.id,
+            kind: "image",
+            image_url: STATIC_IMG_BASE + p.image,
+            alt: p.word
+          });
+        }
+
+      // Shuffle each row independently
+      const row1 = shuffle(wordCards);
+      const row2 = shuffle(imageCards);
+
+      // Concatenate so render() draws: first 6 cards = top row, next 6 = bottom row
+      state.deck = row1.concat(row2);
     }
 
     function cardHtml(c) {
