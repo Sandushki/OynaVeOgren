@@ -1,29 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/match.css') }}">
-  <title>{{ title or "Word Matching Game" }}</title>
+  <title>{{ title or "İngilizce Kelime Eşleştirme Oyunu" }}</title>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>{{ title or "Word Matching Game" }}</h1>
+      <h1>{{ title or "İngilizce Kelime Eşleştirme Oyunu" }}</h1>
       <div class="meta">
-        <div class="pill">Score: <strong id="score">0</strong>/<span id="total">0</span></div>
-        <div class="pill">Attempts: <strong id="attempts">0</strong></div>
+        <div class="pill">Eşleşme: <strong id="score">0</strong>/<span id="total">0</span></div>
+        <div class="pill">Deneme: <strong id="attempts">0</strong></div>
       </div>
     </header>
 
     <div class="board">
-      <section class="col" aria-label="Left column">
-        <h2>{{ left_label or "Column A" }}</h2>
+      <section class="col" aria-label="Sol sütun">
+        <h2>{{ left_label or "Kelimeler" }}</h2>
         <div class="list" id="leftList"></div>
       </section>
 
-      <section class="col" aria-label="Right column">
-        <h2>{{ right_label or "Column B" }}</h2>
+      <section class="col" aria-label="Sağ sütun">
+        <h2>{{ right_label or "Anlamlar" }}</h2>
         <div class="list" id="rightList"></div>
       </section>
     </div>

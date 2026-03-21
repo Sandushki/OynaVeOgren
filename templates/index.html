@@ -14,25 +14,33 @@
         <ul class="game-list">
             <li>
                 <a class="game-card" href="{{ url_for('match') }}">
-                    <span class="game-card__icon" aria-hidden="true"></span>
+                    <span class="game-card__icon" aria-hidden="true">
+                        <img src="{{ url_for('static', filename='img/english_words.png') }}" alt="">
+                    </span>
                     <span class="game-card__title">İngilizce Kelime Eşleştirme Oyunu</span>
                 </a>
             </li>
             <li>
                 <a class="game-card" href="{{ url_for('multiply') }}">
-                    <span class="game-card__icon" aria-hidden="true"></span>
+                    <span class="game-card__icon" aria-hidden="true">
+                        <img src="{{ url_for('static', filename='img/multiply.png') }}" alt="">
+                    </span>
                     <span class="game-card__title">Matematik Çarpım Oyunu</span>
                 </a>
             </li>
             <li>
                 <a class="game-card" href="{{ url_for('addition') }}">
-                    <span class="game-card__icon" aria-hidden="true"></span>
+                    <span class="game-card__icon" aria-hidden="true">
+                        <img src="{{ url_for('static', filename='img/addition.png') }}" alt="">
+                    </span>
                     <span class="game-card__title">Matematik Toplama & Çıkarma Oyunu</span>
                 </a>
             </li>
             <li>
                 <a class="game-card" href="{{ url_for('memory') }}">
-                    <span class="game-card__icon" aria-hidden="true"></span>
+                    <span class="game-card__icon" aria-hidden="true">
+                        <img src="{{ url_for('static', filename='img/memory.png') }}" alt="">
+                    </span>
                     <span class="game-card__title">Hafıza Kartları Oyunu</span>
                 </a>
             </li>

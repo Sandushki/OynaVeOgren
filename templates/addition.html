@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dijital Öğrenme Köprüsü - Matematik Oyunu</title>
-  <link rel="stylesheet" href="../static/css/addition.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/addition.css') }}">
 </head>
 <body>
 
@@ -18,7 +18,9 @@
 
   <div class="stats">
     <div>Skor: <strong>{{ score }}</strong></div>
+    <div>Yanlış: <strong>{{ wrong_answers }}</strong></div>
     <div>Soru: <strong>{{ question_number }}</strong></div>
+    <div>Süre: <strong id="timer">{{ "%02d:%02d"|format(remaining_seconds // 60, remaining_seconds % 60) }}</strong></div>
   </div>
 
   <div class="question">
@@ -39,8 +41,44 @@
     <form action="{{ url_for('reset') }}" method="post">
       <button type="submit" class="btn ghost">Sıfırla</button>
     </form>
+
+    <form action="{{ url_for('addition') }}" method="post" id="timeoutForm">
+      <input type="hidden" name="action" value="finish">
+    </form>
   </div>
 </div>
+
+<script>
+  const timerEl = document.getElementById("timer");
+  const timeoutForm = document.getElementById("timeoutForm");
+  let remainingSeconds = {{ remaining_seconds|int }};
+  let finished = false;
+
+  function renderTimer() {
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = remainingSeconds % 60;
+    timerEl.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  renderTimer();
+
+  const intervalId = window.setInterval(() => {
+    if (finished) return;
+
+    remainingSeconds -= 1;
+
+    if (remainingSeconds <= 0) {
+      remainingSeconds = 0;
+      renderTimer();
+      finished = true;
+      window.clearInterval(intervalId);
+      timeoutForm.submit();
+      return;
+    }
+
+    renderTimer();
+  }, 1000);
+</script>
 
 </body>
 </html>

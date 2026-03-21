@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}">
+  <title>{{ title }}</title>
+</head>
+<body>
+  <main class="results-page">
+    <section class="results-card">
+      <p class="eyebrow">Sonuç Ekranı</p>
+      <h1>{{ heading }}</h1>
+      <p class="subtitle">{{ subtitle }}</p>
+
+      <div class="stats-grid" aria-label="Oyun sonuçları">
+        {% for stat in stats %}
+          <article class="stat-box">
+            <p class="stat-label">{{ stat.label }}</p>
+            <p class="stat-value">{{ stat.value }}</p>
+          </article>
+        {% endfor %}
+      </div>
+
+      <div class="actions">
+        <a class="btn btn-primary" href="{{ primary_action.url }}">{{ primary_action.label }}</a>
+        <a class="btn btn-secondary" href="{{ secondary_action.url }}">{{ secondary_action.label }}</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
