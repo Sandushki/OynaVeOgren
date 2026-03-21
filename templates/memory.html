@@ -19,7 +19,7 @@
     </header>
 
     <div class="controls">
-      <a href="{{ url_for('games') }}" class="back-link">← Ana sayfaya dön</a>
+      <a href="{{ url_for('index') }}" class="back-link">← Ana sayfaya dön</a>
       <button type="button" id="resetBtn">Yeniden başlat</button>
 
       <form method="post" action="{{ submit_url or url_for('submit_memory') }}">
@@ -161,7 +161,7 @@
 
     function render() {
       els.grid.innerHTML = state.deck.map(cardHtml).join("");
-      mesaj("İki kart çevir: bir kelime ve bir resim.");
+      mesaj("İki kart çevir: bir kelime ve bir resim. Her oynayışta farklı kartlar göreceksin!");
       updateHUD();
 
       // attach handlers

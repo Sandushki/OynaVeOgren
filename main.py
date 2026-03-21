@@ -17,21 +17,10 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "top-secret-key")
 # Static Pages
 # ---------------------------
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
-
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
-@app.route('/games')
-def games():
-    return render_template('games.html')
-
-@app.route('/contact')
-def contact():
-    return render_template('contact.html')
 
 
 # ---------------------------
@@ -148,7 +137,7 @@ def multiply():
 def match():
     return render_template("match.html",
                            pairs=matching_pairs,
-                           title="İngilizce Kelime Eşleştirme Oyunu")
+                           title="Dijital Öğrenme Köprüsü - İngilizce Kelime Eşleştirme Oyunu")
 
 
 @app.post("/submit-match")
@@ -166,7 +155,7 @@ def memory():
 
     return render_template(
         "memory.html",
-        title="Hafıza Kartları Oyunu",
+        title="Dijital Öğrenme Köprüsü - Hafıza Kartları Oyunu",
         pairs=memory_pairs
     )
 

@@ -4,16 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <title>Oyna ve Öğren: Ana Sayfa</title> 
+    <title>Dijital Öğrenme Köprüsü</title>
 </head>
 <body>
-    <h1>Oyna ve Öğren</h1>
+    <main class="home-page">
+        <h1>Dijital Öğrenme Köprüsü</h1>
+        <p>Eğlenceli ve öğretici oyunlar</p>
 
-    <nav>
-        <ul>
-            <li><a href="{{ url_for('about') }}">Hakkında</a></li>
-            <li><a href="{{ url_for('games') }}">Oyunlar</a></li>
-            <li><a href="{{ url_for('contact') }}">İletişim</a></li>
+        <ul class="game-list">
+            <li>
+                <a class="game-card" href="{{ url_for('match') }}">
+                    <span class="game-card__icon" aria-hidden="true"></span>
+                    <span class="game-card__title">İngilizce Kelime Eşleştirme Oyunu</span>
+                </a>
+            </li>
+            <li>
+                <a class="game-card" href="{{ url_for('multiply') }}">
+                    <span class="game-card__icon" aria-hidden="true"></span>
+                    <span class="game-card__title">Matematik Çarpım Oyunu</span>
+                </a>
+            </li>
+            <li>
+                <a class="game-card" href="{{ url_for('addition') }}">
+                    <span class="game-card__icon" aria-hidden="true"></span>
+                    <span class="game-card__title">Matematik Toplama & Çıkarma Oyunu</span>
+                </a>
+            </li>
+            <li>
+                <a class="game-card" href="{{ url_for('memory') }}">
+                    <span class="game-card__icon" aria-hidden="true"></span>
+                    <span class="game-card__title">Hafıza Kartları Oyunu</span>
+                </a>
+            </li>
         </ul>
+    </main>
+
+
 </body>
 </html>
