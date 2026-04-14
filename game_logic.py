@@ -57,3 +57,19 @@ def make_choices(correct: int):
     random.shuffle(choices)
     return choices
 
+
+
+# Formatting logic for displaying score and progress
+
+def format_elapsed_ms(elapsed_ms):
+    try:
+        total_ms = max(0, int(elapsed_ms))
+    except (TypeError, ValueError):
+        total_ms = 0
+
+    total_seconds = total_ms // 1000
+    minutes, seconds = divmod(total_seconds, 60)
+
+    if minutes:
+        return f"{minutes} dakika {seconds} saniye"
+    return f"{seconds} saniye"

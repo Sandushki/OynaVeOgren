@@ -30,20 +30,6 @@ def parse_results_payload():
         return {}
 
 
-def format_elapsed_ms(elapsed_ms):
-    try:
-        total_ms = max(0, int(elapsed_ms))
-    except (TypeError, ValueError):
-        total_ms = 0
-
-    total_seconds = total_ms // 1000
-    minutes, seconds = divmod(total_seconds, 60)
-
-    if minutes:
-        return f"{minutes} dakika {seconds} saniye"
-    return f"{seconds} saniye"
-
-
 def render_addition_results():
     correct = int(session.get("score", 0) or 0)
     wrong = int(session.get("wrong_answers", 0) or 0)
@@ -84,23 +70,27 @@ def index():
 def addition():
     # First time entering page → initialize game
     if "question" not in session:
-        session["score"] = 0
-        session["wrong_answers"] = 0
-        session["question_number"] = 0
-        session["last_feedback"] = None
-        session["question"] = generate_question()
-        session["addition_started_at"] = int(time.time())
+        session.update(
+            {
+                "score": 0,
+                "wrong_answers": 0,
+                "question_number": 0,
+                "last_feedback": None,
+                "question": generate_question(),
+                "addition_started_at": int(time.time()),
+            }
+        )
+    else:
+        addition_defaults = {
+            "score": 0,
+            "wrong_answers": 0,
+            "question_number": 0,
+            "last_feedback": None,
+            "addition_started_at": int(time.time()),
+        }
 
-    if "score" not in session:
-        session["score"] = 0
-    if "wrong_answers" not in session:
-        session["wrong_answers"] = 0
-    if "question_number" not in session:
-        session["question_number"] = 0
-    if "last_feedback" not in session:
-        session["last_feedback"] = None
-    if "addition_started_at" not in session:
-        session["addition_started_at"] = int(time.time())
+        for key, value in addition_defaults.items():
+            session.setdefault(key, value)
 
     started_at = int(session.get("addition_started_at", int(time.time())))
     elapsed_seconds = max(0, int(time.time()) - started_at)
